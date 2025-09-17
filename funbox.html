@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Apprends & Joue — version parlante</title>
+<style>
+  :root{
+    --accent:#ff6f61;
+    --bg1:#fff7e6;
+    --card:#ffffff;
+    --good:#2ecc71;
+    --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,#ffd9b3 0%, #ffeef6 100%);
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .app{
+    width:980px;
+    max-width:100%;
+    border-radius:18px;
+    padding:18px;
+    background: linear-gradient(180deg,var(--bg1),#fff);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    gap:16px;
+    align-items:start;
+  }
+
+  header{
+    grid-column:1 / -1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  h1{margin:0;font-size:20px;color:#333}
+  p.hint{margin:0;color:#555;font-size:13px}
+
+  .left{
+    background:var(--card);
+    padding:14px;
+    border-radius:12px;
+  }
+  .right{
+    background:var(--card);
+    padding:14px;
+    border-radius:12px;
+    min-height:400px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .category-btn{
+    display:block;
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:2px solid transparent;
+    background:linear-gradient(90deg,var(--accent),#ff9aa2);
+    color:#fff;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(255,111,97,0.18);
+  }
+  .category-btn:active{transform:translateY(1px)}
+
+  .instr{
+    font-size:14px;
+    color:#333;
+    margin-top:8px;
+    line-height:1.4;
+  }
+
+  /* Game area */
+  .question-large{
+    font-size:68px;
+    font-weight:800;
+    color:#222;
+    margin:8px 0 12px 0;
+    text-align:center;
+    width:100%;
+  }
+  .prompt{
+    font-size:20px;
+    color:#333;
+    margin-bottom:8px;
+    text-align:center;
+  }
+  .options {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    width:100%;
+    margin-top:6px;
+  }
+  .opt{
+    min-width:140px;
+    padding:12px;
+    border-radius:10px;
+    background:linear-gradient(180deg,#ffffff,#fff3ee);
+    border:2px solid #ffdcd1;
+    cursor:pointer;
+    font-weight:700;
+    text-align:center;
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    transition:transform .12s, background .18s;
+    user-select:none;
+  }
+  .opt:hover{transform:translateY(-4px)}
+  .opt.correct{background:linear-gradient(90deg,#d4f7e3,#aaf0c3); border-color:rgba(46,204,113,0.5);}
+  .opt.wrong{background:linear-gradient(90deg,#ffd6d6,#ffb3b3); border-color:rgba(255,107,107,0.5);}
+
+  .controls{
+    margin-top:12px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .btn-small{
+    padding:8px 12px;
+    border-radius:10px;
+    border:none;
+    background:#eee;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .progress { font-size:14px;color:#666;margin-left:auto; }
+
+  .scorebox{
+    margin-top:12px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .score{
+    background:linear-gradient(90deg,#fff,#fff7e6);
+    padding:8px 12px;border-radius:10px;border:1px solid #ffd9c7;font-weight:700;
+  }
+
+  .result-message{
+    font-size:18px;
+    font-weight:800;
+    margin-top:10px;
+    color:var(--accent);
+    min-height:30px;
+  }
+
+  /* Footer / small */
+  .small{font-size:12px;color:#666;margin-top:10px}
+
+  /* mobile adjustments */
+  @media (max-width:880px){
+    .app{grid-template-columns:1fr; padding:12px}
+    .left, .right{width:100%}
+    .question-large{font-size:48px}
+    .opt{min-width:120px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <h1>Apprends & Joue — version parlante </h1>
+      <p class="hint">Simple, éducatif et fun — 50 activités par rubrique</p>
+    </div>
+    <div>
+      <button id="homeBtn" class="btn-small">Accueil</button>
+    </div>
+  </header>
+
+  <!-- LEFT: categories + instructions -->
+  <aside class="left">
+    <h3>Choisis une rubrique</h3>
+    <button class="category-btn" data-cat="chiffres">Chiffres / Nombres (50)</button>
+    <button class="category-btn" data-cat="lettres">Lettres (50)</button>
+    <button class="category-btn" data-cat="animaux">Animaux (50)</button>
+
+    <div class="instr">
+      <p><strong>Comment ça marche :</strong></p>
+      <ol>
+        <li>Choisis une rubrique.</li>
+        <li>Écoute la question ou réécoute si besoin.</li>
+        <li>Clique sur la réponse correcte. Tu auras un retour vocal et visuel.</li>
+        <li>Appuie "Question suivante" jusqu'à la fin (50 questions).</li>
+      </ol>
+      <p class="small">Astuce : clique sur la page une fois pour activer la voix si elle ne parle pas au premier chargement (restriction du navigateur).
+        <br>Pour toute conversation, veillez me joindre sur whatsapp au: +237-657-841-019
+      </p>
+    </div>
+  </aside>
+
+  <!-- RIGHT: game area -->
+  <main class="right">
+    <div style="width:100%;max-width:640px;">
+      <div class="prompt" id="prompt">Sélectionne une rubrique pour commencer</div>
+
+      <div class="question-large" id="bigDisplay" style="display:none">A</div>
+
+      <div class="options" id="optionsArea"></div>
+
+      <div class="controls" id="controls" style="display:none">
+        <button id="listenBtn" class="btn-small">🔊 Réécouter</button>
+        <button id="nextBtn" class="btn-small" style="display:none;background:linear-gradient(90deg,#76c7ff,#4da6ff);color:#fff">Question suivante</button>
+        <button id="restartBtn" class="btn-small" style="display:none">Recommencer</button>
+        <div class="progress" id="progress" style="display:none">0 / 50</div>
+      </div>
+
+      <div class="scorebox" style="display:none" id="scorearea">
+        <div class="score" id="score">Score: 0</div>
+        <div style="margin-left:6px;color:#777">Bonnes réponses</div>
+      </div>
+
+      <div class="result-message" id="message"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ======= UTILS ======= */
+const speak = (text) => {
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'fr-FR';
+  // optionally pick a french voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const fr = voices.find(v=>v.lang && v.lang.startsWith('fr'));
+  if(fr) u.voice = fr;
+  window.speechSynthesis.cancel(); // stop previous
+  window.speechSynthesis.speak(u);
+};
+
+const shuffle = arr => arr.sort(()=>0.5 - Math.random());
+
+/* ======= DATA (50 items each) ======= */
+
+/* NUMBERS: we'll use 1..50 as targets */
+const chiffres = [];
+for(let i=1;i<=50;i++){
+  const correct = i;
+  // create 3 distinct wrong options (1..60)
+  const set = new Set();
+  while(set.size < 3){
+    const n = Math.max(0, Math.floor(Math.random()*60)+1);
+    if(n !== correct) set.add(n);
+  }
+  const opts = shuffle([correct, ...Array.from(set)]);
+  chiffres.push({ type:'nombre', display: String(correct), answer: String(correct), options: opts.map(String) });
+}
+
+/* LETTERS: A-Z looped to reach 50 */
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const lettres = [];
+for(let i=0;i<50;i++){
+  const idx = i % letters.length;
+  const letter = letters[idx];
+  // pick 3 wrong letters
+  const wrongs = [];
+  while(wrongs.length < 3){
+    const c = letters[Math.floor(Math.random() * letters.length)];
+    if(c !== letter && !wrongs.includes(c)) wrongs.push(c);
+  }
+  const opts = shuffle([letter, ...wrongs]);
+  lettres.push({ type:'lettre', display: letter, answer: letter, options: opts });
+}
+
+/* ANIMALS: emoji + french name; loop to 50 */
+const animalsList = [
+  {name:"Chat", emoji:"🐱"}, {name:"Chien", emoji:"🐶"}, {name:"Vache", emoji:"🐮"},
+  {name:"Oiseau", emoji:"🐦"}, {name:"Cheval", emoji:"🐴"}, {name:"Poisson", emoji:"🐟"},
+  {name:"Lapin", emoji:"🐰"}, {name:"Lion", emoji:"🦁"}, {name:"Tigre", emoji:"🐯"},
+  {name:"Singe", emoji:"🐵"}, {name:"Canard", emoji:"🦆"}, {name:"Mouton", emoji:"🐑"},
+  {name:"Cochon", emoji:"🐷"}, {name:"Panda", emoji:"🐼"}, {name:"Renard", emoji:"🦊"},
+  {name:"Éléphant", emoji:"🐘"}, {name:"Girafe", emoji:"🦒"}, {name:"Hérisson", emoji:"🦔"},
+  {name:"Koala", emoji:"🐨"}, {name:"Zèbre", emoji:"🦓"}, {name:"Dauphin", emoji:"🐬"},
+  {name:"Baleine", emoji:"🐋"}, {name:"Requin", emoji:"🦈"}, {name:"Pieuvre", emoji:"🐙"},
+  {name:"Crabe", emoji:"🦀"}, {name:"Hippocampe", emoji:"🦎"}, {name:"Tortue", emoji:"🐢"},
+  {name:"Serpent", emoji:"🐍"}, {name:"Grenouille", emoji:"🐸"}, {name:"Aigle", emoji:"🦅"},
+  {name:"Chouette", emoji:"🦉"}, {name:"Pingouin", emoji:"🐧"}, {name:"Dinde", emoji:"🦃"},
+  {name:"Paon", emoji:"🦚"}, {name:"Perroquet", emoji:"🦜"}, {name:"Corbeau", emoji:"🐦‍⬛"},
+  {name:"Cygne", emoji:"🦢"}, {name:"Phoque", emoji:"🦭"}, {name:"Castor", emoji:"🦫"},
+  {name:"Loutre", emoji:"🦦"}, {name:"Chameau", emoji:"🐪"}, {name:"Dromadaire", emoji:"🐫"},
+  {name:"Bison", emoji:"🦬"}, {name:"Rhinocéros", emoji:"🦏"}, {name:"Hippopotame", emoji:"🦛"},
+  {name:"Crocodile", emoji:"🐊"}, {name:"Kangourou", emoji:"🦘"}, {name:"Rat", emoji:"🐀"},
+  {name:"Souris", emoji:"🐭"}, {name:"Écureuil", emoji:"🐿️"}, {name:"Chauve-souris", emoji:"🦇"},
+  {name:"Fourmi", emoji:"🐜"}, {name:"Abeille", emoji:"🐝"}, {name:"Papillon", emoji:"🦋"},
+  {name:"Coccinelle", emoji:"🐞"}, {name:"Araignée", emoji:"🕷️"}, {name:"Scorpion", emoji:"🦂"}
+];
+const animaux = [];
+for(let i=0;i<50;i++){
+  const base = animalsList[i % animalsList.length];
+  // pick 3 wrong names
+  const wrongs = [];
+  while(wrongs.length < 3){
+    const choice = animalsList[Math.floor(Math.random()*animalsList.length)].name;
+    if(choice !== base.name && !wrongs.includes(choice)) wrongs.push(choice);
+  }
+  const opts = shuffle([base.name, ...wrongs]);
+  animaux.push({ type:'animal', display: base.emoji, answer: base.name, options: opts });
+}
+
+/* ======= GAME STATE ======= */
+let currentCategory = null;
+let pool = [];
+let idx = 0;
+let score = 0;
+
+/* DOM */
+const promptEl = document.getElementById('prompt');
+const bigEl = document.getElementById('bigDisplay');
+const optsEl = document.getElementById('optionsArea');
+const listenBtn = document.getElementById('listenBtn');
+const nextBtn = document.getElementById('nextBtn');
+const restartBtn = document.getElementById('restartBtn');
+const progressEl = document.getElementById('progress');
+const scoreBox = document.getElementById('scorearea');
+const scoreEl = document.getElementById('score');
+const msgEl = document.getElementById('message');
+const controls = document.getElementById('controls');
+
+document.querySelectorAll('.category-btn').forEach(b=>{
+  b.addEventListener('click', ()=>startCategory(b.dataset.cat));
+});
+document.getElementById('homeBtn').addEventListener('click', resetToHome);
+listenBtn.addEventListener('click', ()=>speakCurrent());
+nextBtn.addEventListener('click', ()=>nextQ());
+restartBtn.addEventListener('click', ()=>resetToHome());
+
+function resetToHome(){
+  currentCategory = null;
+  pool = [];
+  idx = 0;
+  score = 0;
+  promptEl.textContent = "Sélectionne une rubrique pour commencer";
+  bigEl.style.display = 'none';
+  optsEl.innerHTML = '';
+  controls.style.display = 'none';
+  progressEl.style.display = 'none';
+  scoreBox.style.display = 'none';
+  nextBtn.style.display = 'none';
+  restartBtn.style.display = 'none';
+  msgEl.textContent = '';
+  speak("Bienvenue! À titre de rappel, cette plateforme est conçue pour les enfants. Alors Choisis une rubrique pour commencer.");
+}
+
+function startCategory(cat){
+  msgEl.textContent = '';
+  score = 0;
+  idx = 0;
+  if(cat === 'chiffres') { pool = shuffle([...chiffres]); promptEl.textContent = "Quel est ce nombre ?"; }
+  if(cat === 'lettres')  { pool = shuffle([...lettres]); promptEl.textContent = "Quelle lettre est affichée ?"; }
+  if(cat === 'animaux')  { pool = shuffle([...animaux]); promptEl.textContent = "Quel animal est-ce ?"; }
+  currentCategory = cat;
+  controls.style.display = 'flex';
+  progressEl.style.display = 'inline-block';
+  scoreBox.style.display = 'flex';
+  scoreEl.textContent = `Score: ${score}`;
+  showQuestion();
+  // speak instructions
+  speak(promptEl.textContent + " Utilise le bouton réécouter si besoin.");
+}
+
+function showQuestion(){
+  msgEl.textContent = '';
+  nextBtn.style.display = 'none';
+  restartBtn.style.display = 'none';
+  const q = pool[idx];
+  progressEl.textContent = `${idx+1} / ${pool.length}`;
+  // display main visual
+  bigEl.style.display = 'block';
+  bigEl.textContent = q.display;
+  // build options
+  optsEl.innerHTML = '';
+  q.options.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = opt;
+    b.addEventListener('click', ()=>selectAnswer(b, opt));
+    optsEl.appendChild(b);
+  });
+  // update score text
+  scoreEl.textContent = `Score: ${score}`;
+  // auto speak current question
+  speakCurrent();
+}
+
+function speakCurrent(){
+  if(!currentCategory) return;
+  const q = pool[idx];
+  if(!q) return;
+  // create spoken prompt based on type
+  if(q.type === 'nombre'){
+    speak(`Quel est ce nombre ? . Les options sont : ${q.options.join(', ')}`);
+  } else if(q.type === 'lettre'){
+    // pronounce letter separately
+    // say: "Quelle lettre est affichée ? Lettre : A. Options : A, B, C, D"
+    speak(`Quelle lettre est affichée ?  . Options: ${q.options.join(', ')}`);
+  } else if(q.type === 'animal'){
+    speak(`Quel animal est-ce ? Options : ${q.options.join(', ')}`);
+  }
+}
+
+function selectAnswer(buttonEl, selected){
+  // disable options
+  const buttons = Array.from(document.querySelectorAll('.opt'));
+  buttons.forEach(b => b.disabled = true);
+  const q = pool[idx];
+  // highlight correct and wrong
+  buttons.forEach(b=>{
+    if(b.textContent === q.answer) b.classList.add('correct');
+  });
+  if(selected === q.answer){
+    buttonEl.classList.add('correct');
+    score++;
+    msgEl.textContent = "✅ Bravo ! Un bonbon pour toi";
+    speak("Bravo ! Très bien");
+  } else {
+    buttonEl.classList.add('wrong');
+    msgEl.textContent = "❌ Pas de bonbon cette fois.";
+    speak("Oh non! Essaye encore.");
+  }
+  scoreEl.textContent = `Score: ${score}`;
+  nextBtn.style.display = 'inline-block';
+  // if last question, show restart
+  if(idx === pool.length -1){
+    nextBtn.style.display = 'none';
+    restartBtn.style.display = 'inline-block';
+    msgEl.textContent = `🎉 Fin ! Score final : ${score} sur ${pool.length}`;
+    speak(`Fin du quiz. Ton score final est ${score} sur ${pool.length}.`);
+  }
+}
+
+function nextQ(){
+  if(idx < pool.length -1){
+    idx++;
+    showQuestion();
+  } else {
+    // end
+    msgEl.textContent = `🎉 Fin ! Score final : ${score} sur ${pool.length}`;
+    restartBtn.style.display = 'inline-block';
+    speak(`Fin du quiz. Ton score final est ${score} sur ${pool.length}.`);
+  }
+}
+
+/* init */
+resetToHome();
+
+</script>
+</body>
+</html>
